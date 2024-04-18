@@ -1,4 +1,5 @@
 import json
+import time
 
 from fastapi import WebSocket
 from sqlalchemy.orm import Session
@@ -54,14 +55,23 @@ class GameManager:
         await websocket.send_text("Search cancelled")
 
     async def make_move(self, user_id: str, move: str, db: Session):
+
+        print("IN MAKE MOVE user id: ", int(user_id), move)
+        db.expire_all()
+        db.expunge_all()
+
         current_session = db.query(GameSession).filter(
-            (GameSession.player1_id == user_id) | (GameSession.player2_id == user_id),
+            (GameSession.player1_id == int(user_id)) | (GameSession.player2_id == int(user_id)),
             GameSession.status == 'waiting'
-        ).first()
+        ).order_by(GameSession.session_id.desc()).first()
 
         if current_session is None:
             await self.active_websockets[user_id].send_text(json.dumps({"error": "No active game session"}))
             return
+
+        if str(current_session.player2_id) == user_id:
+            current_session.player2_move = move
+            db.commit()
 
         if str(current_session.player1_id) == user_id:
             current_session.player1_move = move
@@ -71,7 +81,11 @@ class GameManager:
 
         current_session = db.query(GameSession).filter(
             GameSession.session_id == current_session.session_id
-        ).first()
+        ).order_by(GameSession.session_id.desc()).first()
+
+        if current_session is None:
+            await self.active_websockets[user_id].send_text(json.dumps({"error": "No active game session"}))
+            return
 
         if current_session.player1_move and current_session.player2_move:
             result = self.determine_winner(
@@ -201,14 +215,17 @@ class GameManager:
             player1_message = "You won!" if winner_id_str == player1_id else "You lost"
             player2_message = "You won!" if winner_id_str == player2_id else "You lost"
 
-        if player1_id in self.active_websockets:
-            await self.active_websockets[player1_id].send_text(json.dumps({
+        if str(player1_id) in self.active_websockets:
+            print("notify_players_result notify result", player1_id)
+
+            await self.active_websockets[str(player1_id)].send_text(json.dumps({
                 "action": "game_result",
                 "winner": winner_id_str,
                 "result": player1_message
             }))
-        if player2_id in self.active_websockets:
-            await self.active_websockets[player2_id].send_text(json.dumps({
+        if str(player2_id) in self.active_websockets:
+            print("notify_players_result notify result", player2_id)
+            await self.active_websockets[str(player2_id)].send_text(json.dumps({
                 "action": "game_result",
                 "winner": winner_id_str,
                 "result": player2_message

@@ -6,10 +6,10 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__: str = 'users'
-    user_id: int = Column(Integer, primary_key=True, autoincrement=True)
-    nickname: str = Column(String(255), unique=True, nullable=False)
-    password: str = Column(String(255), nullable=False)
+    __tablename__ = 'users'
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
+    nickname = Column(String(255), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)
 
     sessions_as_player1 = relationship('GameSession', foreign_keys='GameSession.player1_id')
     sessions_as_player2 = relationship('GameSession', foreign_keys='GameSession.player2_id')
@@ -18,13 +18,13 @@ class User(Base):
 
 
 class GameSession(Base):
-    __tablename__: str = 'game_sessions'
-    session_id: int = Column(Integer, primary_key=True, autoincrement=True)
-    player1_id: int = Column(Integer, ForeignKey('users.user_id'))
-    player2_id: int = Column(Integer, ForeignKey('users.user_id'))
-    player1_move: str = Column(Enum('rock', 'paper', 'scissors'))
-    player2_move: str = Column(Enum('rock', 'paper', 'scissors'))
-    status: str = Column(Enum('waiting', 'completed', 'timeout', name='game_statuses'), default='waiting')
+    __tablename__ = 'game_sessions'
+    session_id = Column(Integer, primary_key=True, autoincrement=True)
+    player1_id = Column(Integer, ForeignKey('users.user_id'))
+    player2_id = Column(Integer, ForeignKey('users.user_id'))
+    player1_move = Column(Enum('rock', 'paper', 'scissors'))
+    player2_move = Column(Enum('rock', 'paper', 'scissors'))
+    status = Column(Enum('waiting', 'completed', 'timeout', name='game_statuses'), default='waiting')
 
 
 class GameStat(Base):
