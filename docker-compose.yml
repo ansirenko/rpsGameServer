@@ -6,6 +6,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: rock_paper_scissors
+    command: --transaction-isolation=READ-UNCOMMITTED
     ports:
       - "3307:3306"
     volumes:
